@@ -1,8 +1,13 @@
 import { listenAndServe } from 'https://deno.land/std/http/server.ts'
 import { acceptWebSocket, acceptable } from 'https://deno.land/std/ws/mod.ts'
+import * as flags from "https://deno.land/std@v0.50.0/flags/mod.ts";
 import { chat } from './chat.ts'
 
-listenAndServe({ port: 3000 }, async (req) => {
+const DEFAULT_PORT = 3000;
+const argPort = flags.parse(Deno.args).port;
+const port = argPort ? Number(argPort) : DEFAULT_PORT;
+
+listenAndServe({ port: port }, async (req) => {
   if (req.method === 'GET' && req.url === '/') {
     req.respond({
       status: 200,
@@ -26,4 +31,4 @@ listenAndServe({ port: 3000 }, async (req) => {
   }
 })
 
-console.log('Server running on localhost:3000')
+console.log(`Server running on localhost:${port}`)
