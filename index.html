@@ -9,12 +9,24 @@
     <script type="module">
       import { html, render, useEffect, useState } from 'https://unpkg.com/htm/preact/standalone.module.js'
 
+      const pingEvent = ["ping", Uint8Array]
       let ws
+      function pingPong(ws) {
+        ws.send(pingEvent);
+
+        setTimeout(() => {
+          pingPong(ws);
+        }, 10000)
+      }
 
       function Chat() {
         // Messages
         const [messages, setMessages] = useState([])
-        const onReceiveMessage = ({ data }) => setMessages((m) => [...m, data])
+        const onReceiveMessage = ({ data }) => { 
+          if(data != 'pong') {
+             setMessages((m) => [...m, data]) 
+            }
+          }
         const onSendMessage = (e) => {
           const msg = e.target[0].value
 
@@ -27,6 +39,7 @@
         useEffect(() => {
           if (ws) ws.close()
           ws = new WebSocket(`ws://${window.location.host}/ws`)
+          ws.onopen = () => pingPong(ws)
           ws.addEventListener('message', onReceiveMessage)
 
           return () => {

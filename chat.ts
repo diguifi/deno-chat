@@ -1,10 +1,20 @@
-import { WebSocket, isWebSocketCloseEvent } from 'https://deno.land/std/ws/mod.ts'
+import { WebSocket, isWebSocketCloseEvent, isWebSocketPingEvent } from 'https://deno.land/std/ws/mod.ts'
 import { v4 } from 'https://deno.land/std/uuid/mod.ts'
   
+  const pingEvent = ["ping", Uint8Array]
   const users = new Map<string, WebSocket>()
+
+  function isPingEvent(ev: any): boolean {
+    if (ev == pingEvent) return true;
+    return false;
+  }
   
+  function pong(senderId: string): void {
+    let user = users.get(senderId)
+    user?.send('pong');
+  }
+
   function broadcast(message: string, senderId?: string): void {
-    if (!message) return
     for (const user of users.values()) {
       user.send(senderId ? `[${senderId}]: ${message}` : message)
     }
@@ -20,14 +30,17 @@ import { v4 } from 'https://deno.land/std/uuid/mod.ts'
     // Wait for new messages
     for await (const event of ws) {
       const message = typeof event === 'string' ? event : ''
-  
-      broadcast(message, userId)
-  
-      // Unregister user conection
+
       if (!message && isWebSocketCloseEvent(event)) {
         users.delete(userId)
         broadcast(`> User with the id ${userId} is disconnected`)
         break
+      }
+
+      if(!isPingEvent(event)) {
+        broadcast(message, userId)
+      } else {
+        pong(userId)
       }
     }
   }
