@@ -1,14 +1,16 @@
 import { listenAndServe } from 'https://deno.land/std/http/server.ts'
 import { acceptWebSocket, acceptable } from 'https://deno.land/std/ws/mod.ts'
 import * as flags from 'https://deno.land/std@v0.50.0/flags/mod.ts'
-import { chat } from './server/chat.ts'
+import { Chat } from './server/chat.ts'
 
 export class Server {
   private argPort: number = flags.parse(Deno.args).port
   private port: number
+  private chat: Chat
 
   constructor(serverConfigs: any) {
     this.port = this.argPort ? Number(this.argPort) : serverConfigs.defaultPort
+    this.chat = new Chat()
   }
 
   public init(): void {
@@ -41,7 +43,7 @@ export class Server {
             bufReader: req.r,
             bufWriter: req.w,
             headers: req.headers,
-          }).then(chat)
+          }).then(this.chat.handleClient.bind(this.chat))
         }
       }
     })
